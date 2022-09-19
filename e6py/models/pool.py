@@ -39,9 +39,7 @@ class Pool(DictSerializationMixin):
                 self._posts = self._client.get_posts(tags=f"pool:{self.id}", limit=320)
             else:
                 for start in self.post_ids[::320]:
-                    self._posts += self._client.get_posts(
-                        tags=f"pool:{self.id}", limit=320, after=start - 1
-                    )
+                    self._posts += self._client.get_posts(tags=f"pool:{self.id}", limit=320, after=start - 1)
         return self._posts
 
     def download(self, path: str = None) -> int:

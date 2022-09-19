@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List
 
 from e6py.http.route import RawRoute, Route
 from e6py.models.post import Post
@@ -80,9 +79,7 @@ class PostRequests:
         elif tags and isinstance(tags, str):
             tags = tags.replace(" ", "+")
 
-        data = self.request(
-            Route("GET", "/posts.json"), status=status, page=page, limit=limit, tags=tags, **kwargs
-        )
+        data = self.request(Route("GET", "/posts.json"), status=status, page=page, limit=limit, tags=tags, **kwargs)
         posts = Post.from_list(data, self) if data else None
         if self.cache and posts:
             for post in posts:

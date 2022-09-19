@@ -2,7 +2,7 @@ import logging
 import time
 import traceback
 from datetime import datetime
-from typing import Any, ClassVar, Dict, Optional, Type
+from typing import Any, ClassVar, Dict, Optional
 
 import requests
 from requests import Response, Session
@@ -86,9 +86,7 @@ class HTTPClient(PostRequests, FlagRequests, NoteRequests, TagRequests, PoolRequ
         if self.login and self.api_key:
             auth = requests.auth.HTTPBasicAuth(self.login, self.api_key)
 
-        with self.__session.request(
-            route.method, route.url, headers=headers, auth=auth, stream=True
-        ) as response:
+        with self.__session.request(route.method, route.url, headers=headers, auth=auth, stream=True) as response:
             if response.status_code == 200:
                 with open(path, "wb+") as f:
                     f.write(response.content)
@@ -129,9 +127,7 @@ class HTTPClient(PostRequests, FlagRequests, NoteRequests, TagRequests, PoolRequ
         self.__last_request = datetime.now().timestamp()
         for tries in range(self._retries):
             try:
-                with self.__session.request(
-                    route.method, url, headers=headers, auth=auth
-                ) as response:
+                with self.__session.request(route.method, url, headers=headers, auth=auth) as response:
                     result = response.json()
                     if response.status_code == 404:
                         return None
