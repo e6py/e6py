@@ -1,10 +1,13 @@
 from os import environ as env
 
-from dotenv import load_dotenv
-
 from e6py.http.client import HTTPClient
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 
 
 class Client(HTTPClient):
