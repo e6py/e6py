@@ -1,4 +1,11 @@
+from importlib.metadata import version as _v
+
 import sentinel
+
+try:
+    __version__ = _v("naff")
+except Exception:
+    __version__ = "0.0.0"
 
 MISSING = sentinel.create(
     "MISSING",

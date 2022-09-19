@@ -11,7 +11,7 @@
 ## Usage
 
 ```py
-from e6py.client import E621Client
+from e6py import E621Client
 
 client = E621Client(login="username", api_key="API Key")
 posts = client.get_posts()

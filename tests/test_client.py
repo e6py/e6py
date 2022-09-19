@@ -1,6 +1,6 @@
 import pytest
 
-from e6py.client import E621Client as Client
+from e6py import E621Client as Client
 from tests.setup import client
 
 

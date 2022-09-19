@@ -4,6 +4,10 @@ jobs:
   pytest:
     name: runner / pytest tests
     runs-on: ubuntu-latest
+    env:
+      USER: ${{ secrets.API_USER }}
+      KEY: ${{ secrets.API_KEY }}
+      URL: ${{ secrets.API_HOST }}
     strategy:
       max-parallel: 1
       matrix:
@@ -21,10 +25,6 @@ jobs:
           pip install -e ${{ matrix.extras }}
           pip install pytest pytest-cov
       - name: Run Tests
-        env:
-          USER: ${{ secrets.API_USER }}
-          KEY: ${{ secrets.API_KEY }}
-          URL: ${{ secrets.API_HOST }}
         run: |
           pytest
           coverage xml -i
