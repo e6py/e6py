@@ -7,7 +7,7 @@ from e6py.mixins import DictSerializationMixin
 from e6py.utils.converters import convert_timestamp
 
 if TYPE_CHECKING:
-    from e6py.client import E621Client
+    from e6py.client import E621Client  # pragma: no cover
 
 
 @attr.s(slots=True, kw_only=True)

@@ -2,7 +2,7 @@ import logging
 import time
 import traceback
 from datetime import datetime
-from typing import Any, ClassVar, Dict, Optional
+from typing import Any, ClassVar, Dict, Optional, Type
 
 import requests
 from requests import Response, Session
@@ -19,9 +19,10 @@ log = logging.getLogger(__name__)
 class HTTPClient(PostRequests, FlagRequests, NoteRequests, TagRequests, PoolRequests):
     BASE: ClassVar[str] = None
 
-    def __init__(self, login: str, api_key: str) -> "HTTPClient":
+    def __init__(self, login: str, api_key: str, cache: bool = True) -> "HTTPClient":
         self.__session = Session()
         self._retries: int = 5
+        self.cache = cache
         self.login = login
         self.api_key = api_key
         if not self.login or not self.api_key:
@@ -29,9 +30,43 @@ class HTTPClient(PostRequests, FlagRequests, NoteRequests, TagRequests, PoolRequ
         self.user_agent = f"e6py/{e6py.__version__} (by zevaryx on e621)"
         self.__last_request = 0
 
+        # Caches
+        self._query_cache = dict()  # TODO: Figure out format for keys
+        self._alias_cache = dict()
+        self._flag_cache = dict()
+        self._note_cache = dict()
+        self._pool_cache = dict()
+        self._post_cache = dict()
+        self._tag_cache = dict()
+
     def __del__(self):
-        if self.__session:
-            self.__session.close()
+        self.close()
+
+    def _get_cache(self, type: str) -> dict:  # pragma: no cover
+        match type:
+            case "flag":
+                return self._flag_cache
+            case "note":
+                return self._note_cache
+            case "pool":
+                return self._pool_cache
+            case "post":
+                return self._post_cache
+            case "tag":
+                return self._tag_cache
+
+    def _check_cache(self, func, type: str):  # pragma: no cover
+        def checker(func, *args, **kwargs):
+            key = f"{type}_id"
+            cache = self._get_cache(type)
+            if self.cache and (obj := cache.get(key)):
+                return obj
+            obj = func(*args, **kwargs)
+            if self.cache:
+                cache[kwargs.get(key)] = obj
+            return obj
+
+        return checker
 
     def close(self) -> None:
         """Close the session"""
@@ -51,7 +86,9 @@ class HTTPClient(PostRequests, FlagRequests, NoteRequests, TagRequests, PoolRequ
         if self.login and self.api_key:
             auth = requests.auth.HTTPBasicAuth(self.login, self.api_key)
 
-        with self.__session.request(route.method, route.url, headers=headers, auth=auth, stream=True) as response:
+        with self.__session.request(
+            route.method, route.url, headers=headers, auth=auth, stream=True
+        ) as response:
             if response.status_code == 200:
                 with open(path, "wb+") as f:
                     f.write(response.content)
@@ -92,37 +129,39 @@ class HTTPClient(PostRequests, FlagRequests, NoteRequests, TagRequests, PoolRequ
         self.__last_request = datetime.now().timestamp()
         for tries in range(self._retries):
             try:
-                with self.__session.request(route.method, url, headers=headers, auth=auth) as response:
+                with self.__session.request(
+                    route.method, url, headers=headers, auth=auth
+                ) as response:
                     result = response.json()
                     if response.status_code == 404:
                         return None
-                    if response.status_code in [500, 502]:
+                    if response.status_code in [500, 502]:  # pragma: no cover
                         log.warning(
                             f"{route.method}::{route.url}: Received {response.status_code}, retrying in {1 + tries * 2} seconds"
                         )
                         time.sleep(1 + tries * 2)
                         continue
-                    elif response.status_code == 503:
+                    elif response.status_code == 503:  # pragma: no cover
                         log.warning(
                             f"{route.method}::{route.url}: Received {response.status_code}, potential ratelimit, retrying in {1 + tries * 2} seconds"
                         )
                         time.sleep(1 + tries * 2)
                         continue
-                    elif not 300 > response.status_code >= 200:
+                    elif not 300 > response.status_code >= 200:  # pragma: no cover
                         self._raise_exception(response, route, result)
-                    if "success" in result and result["success"] is False:
+                    if "success" in result and result["success"] is False:  # pragma: no cover
                         raise E621Error(f"Request failed: {result['reason']}")
                     if isinstance(result, dict) and len(result) == 1:
                         head_key = list(result.keys())[0]
                         result = result[head_key]
                     return result
-            except (Forbidden, NotFound, E621Error, HTTPException):
+            except (Forbidden, NotFound, E621Error, HTTPException):  # pragma: no cover
                 raise
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 log.error("".join(traceback.format_exception(type(e), e, e.__traceback__)))
                 time.sleep(1)
 
-    def _raise_exception(self, response, route, result):
+    def _raise_exception(self, response, route, result):  # pragma: no cover
         log.error(f"{route.method}::{route.url}: {response.status_code}")
 
         if response.status_code == 403:

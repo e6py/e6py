@@ -8,7 +8,7 @@ from e6py.models import Category
 from e6py.utils.converters import convert_timestamp
 
 if TYPE_CHECKING:
-    from e6py.client import E621Client
+    from e6py.client import E621Client  # pragma: no cover
 
 
 def convert_tags(value):
@@ -23,10 +23,10 @@ class RelatedTag(DictSerializationMixin):
 
 
 def convert_related(related_tags: str):
-    if related_tags == "[]":
-        return list()
+    if related_tags == "[]" or not related_tags:
+        return []
     related_tags = related_tags.split(" ")
-    retval = list()
+    retval = []
     for i in range(0, len(related_tags), 2):
         retval.append(RelatedTag(name=related_tags[i], score=int(related_tags[i + 1])))
 

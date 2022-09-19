@@ -72,7 +72,11 @@ class NoteRequests:
             page=page,
         )
 
-        return Note.from_list(data, self) if data else None
+        notes = Note.from_list(data, self) if data else None
+        if self.cache and notes:
+            for note in notes:
+                self._note_cache[note.id] = note
+        return notes
 
     def get_note(self, note_id: int) -> Note | None:
         """
@@ -84,5 +88,10 @@ class NoteRequests:
         Returns:
             Specified note if it exists
         """
+        if self.cache and (note := self._note_cache.get(note_id)):
+            return note
         data = self.request(Route("GET", f"/notes/{note_id}.json"))
-        return Note.from_dict(data, self) if data else None
+        note = Note.from_dict(data, self) if data else None
+        if self.cache:
+            self._note_cache[note_id] = note
+        return note

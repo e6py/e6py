@@ -85,7 +85,12 @@ class PoolRequests:
             page=page,
             limit=limit,
         )
-        return Pool.from_list(data, self) if data else None
+        pools = Pool.from_list(data, self) if data else None
+        if self.cache and pools:
+            for pool in pools:
+                self._pool_cache[pool.id] = pool
+
+        return pools
 
     def get_pool(self, pool_id: int) -> Pool | None:
         """
@@ -97,5 +102,10 @@ class PoolRequests:
         Returns:
             Pool if it exists
         """
+        if self.cache and (pool := self._pool_cache.get(pool_id)):
+            return pool
         data = self.request(Route("GET", f"/pools/{pool_id}.json"))
-        return Pool.from_dict(data, self) if data else None
+        pool = Pool.from_dict(data, self) if data else None
+        if self.cache:
+            self._pool_cache[pool_id] = pool
+        return pool

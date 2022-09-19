@@ -89,7 +89,11 @@ class TagRequests:
             page=page,
         )
 
-        return Tag.from_list(data, self) if data else None
+        tags = Tag.from_list(data, self) if data else None
+        if self.cache and tags:
+            for tag in tags:
+                self._tag_cache[tag.id] = tag
+        return tags
 
     def get_tag(self, tag_id: int) -> Tag | None:
         """
@@ -101,8 +105,13 @@ class TagRequests:
         Returns:
             Specified tag if it exists
         """
+        if self.cache and (tag := self._tag_cache.get(tag_id)):
+            return tag
         data = self.request(Route("GET", f"/tags/{tag_id}.json"))
-        return Tag.from_dict(data, self) if data else None
+        tag = Tag.from_dict(data, self) if data else None
+        if self.cache:
+            self._tag_cache[tag_id] = tag
+        return tag
 
     def get_tag_aliases(
         self,
@@ -170,7 +179,12 @@ class TagRequests:
             limit=limit,
             page=page,
         )
-        return TagAlias.from_list(data, self) if data else None
+        aliases = TagAlias.from_list(data, self) if data else None
+        if self.cache and aliases:
+            for alias in aliases:
+                self._alias_cache[alias.id] = alias
+
+        return aliases
 
     def get_tag_alias(self, alias_id: int) -> TagAlias | None:
         """
@@ -182,5 +196,10 @@ class TagRequests:
         Returns:
             Tag alias if it exists
         """
+        if self.cache and (alias := self._alias_cache.get(alias_id)):
+            return alias
         data = self.request(Route("GET", f"/tag_aliases/{alias_id}.json"))
-        return TagAlias.from_dict(data, self) if data else None
+        alias = TagAlias.from_dict(data, self) if data else None
+        if self.cache:
+            self._alias_cache[alias_id] = alias
+        return alias

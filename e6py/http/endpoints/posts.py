@@ -1,4 +1,5 @@
-from typing import Any, List
+from pathlib import Path
+from typing import Any, List, Optional
 
 from e6py.http.route import RawRoute, Route
 from e6py.models.post import Post
@@ -21,8 +22,13 @@ class PostRequests:
         Returns:
             Specified post if it exists
         """
+        if self.cache and (post := self._post_cache.get(post_id)):
+            return post
         data = self.request(Route("GET", f"/posts/{post_id}.json"))
-        return Post.from_dict(data, self) if data else None
+        post = Post.from_dict(data, self) if data else None
+        if self.cache:
+            self._post_cache[post_id] = post
+        return post
 
     def get_posts(
         self,
@@ -74,8 +80,15 @@ class PostRequests:
         elif tags and isinstance(tags, str):
             tags = tags.replace(" ", "+")
 
-        data = self.request(Route("GET", "/posts.json"), status=status, page=page, limit=limit, tags=tags, **kwargs)
-        return Post.from_list(data, self) if data else None
+        data = self.request(
+            Route("GET", "/posts.json"), status=status, page=page, limit=limit, tags=tags, **kwargs
+        )
+        posts = Post.from_list(data, self) if data else None
+        if self.cache and posts:
+            for post in posts:
+                self._post_cache[post.id] = post
+
+        return posts
 
     def download_post(self, post: Post, path: str) -> bool:
         """

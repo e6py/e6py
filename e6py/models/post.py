@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
@@ -5,9 +6,10 @@ import attr
 
 from e6py.mixins import DictSerializationMixin
 from e6py.utils.converters import convert_timestamp
+from e6py.utils.hash import hash_file
 
 if TYPE_CHECKING:
-    from e6py.client import E621Client
+    from e6py.client import E621Client  # pragma: no cover
 
 
 @attr.s(slots=True, kw_only=True)
@@ -20,7 +22,7 @@ class File(DictSerializationMixin):
     url: Optional[str] = attr.ib(default=None)
 
     @ext.validator
-    def _ext_check(self, attribute, value):
+    def _ext_check(self, _attribute, value):
         if value not in ["jpg", "png", "gif", "swf", "webm"]:
             raise ValueError("Extension must be one of: jpg, png, gif, swf, webm")
 
@@ -68,6 +70,7 @@ class Flags(DictSerializationMixin):
     status_locked: bool = attr.ib(default=False)
     rating_locked: bool = attr.ib(default=False)
     deleted: bool = attr.ib(default=False)
+    comment_disabled: bool = attr.ib(default=False)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -83,9 +86,9 @@ def ensure_cls(cls, lst=False):
 
     def converter(val):
         if isinstance(val, cls):
-            pass
+            return val
         elif lst and all(isinstance(x, cls) for x in val):
-            pass
+            return val
         else:
             if not lst:
                 return cls(**val)
@@ -128,13 +131,25 @@ class Post(DictSerializationMixin):
     has_notes: bool = attr.ib(default=False)
     duration: Optional[int] = attr.ib(default=None)
 
-    def download(self, path: Optional[str] = None) -> None:
+    _downloaded: bool = attr.ib(default=False)
+
+    def download(self, path: Optional[str] = None) -> Optional[bool]:
         """
         Download the post
 
         Args:
             path: Path to download to, default `Post.file.md5`.`Post.file.ext`
+
+        Returns:
+            If file was downloaded
         """
+        if self._downloaded:
+            return False
         if not path:
             path = f"{self.file.md5}.{self.file.ext}"
+        if os.path.exists(path) and hash_file(path) == self.file.md5:
+            self._downloaded = True
+            return False
         self._client.download_post(self, path)
+        self._downloaded = True
+        return True

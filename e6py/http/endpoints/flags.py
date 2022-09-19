@@ -81,7 +81,12 @@ class FlagRequests:
             limit=limit,
         )
 
-        return Flag.from_list(data, self) if data else None
+        flags = Flag.from_list(data, self) if data else None
+        if self.cache and flags:
+            for flag in flags:
+                self._flag_cache[flag.id] = flag
+
+        return flags
 
     def get_flag(self, flag_id: int) -> Flag | None:
         """
@@ -93,5 +98,11 @@ class FlagRequests:
         Returns:
             Specified flag if it exists
         """
+        if self.cache and (flag := self._flag_cache.get(flag_id)):
+            return flag
+
         data = self.request(Route("GET", f"/post_flags/{flag_id}.json"))
-        return Flag.from_dict(data, self) if data else None
+        flag = Flag.from_dict(data, self) if data else None
+        if self.cache:
+            self._flag_cache[flag_id] = flag
+        return flag

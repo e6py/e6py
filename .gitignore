@@ -140,3 +140,7 @@ cython_debug/
 # Custom project stuff
 # test.py is a local tester with private API keys
 test.py
+test.ipynb
+
+# VSCode
+.vscode/
