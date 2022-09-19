@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e6py"
-version = "0.1.0"
+version = "0.1.2"
 description = "An e621 API wrapper"
 authors = ["zevaryx <zevaryx@gmail.com>"]
 license = "MIT"

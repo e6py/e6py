@@ -23,7 +23,7 @@ setup(
     author_email="zevaryx@gmail.com",
     url="https://github.com/e6py/e6py",
     version=pyproject["tool"]["poetry"]["version"],
-    packages=find_packages(),
+    packages=find_packages("e6py"),
     include_package_data=True,
     python_requires=">=3.10",
     install_requires=(Path(__file__).parent / "requirements.txt").read_text().splitlines(),
