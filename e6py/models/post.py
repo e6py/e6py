@@ -131,7 +131,7 @@ class Post(DictSerializationMixin):
     has_notes: bool = attr.ib(default=False)
     duration: Optional[int] = attr.ib(default=None)
 
-    _downloaded: bool = attr.ib(default=False)
+    _downloaded: bool = attr.ib(default=False, metadata={"no_export": True})
 
     def download(self, path: Optional[str] = None) -> Optional[bool]:
         """
